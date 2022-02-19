@@ -2,30 +2,31 @@ const fs = require('fs');
 const { watch } = require('fs/promises');
 const { getSongInformation } = require('./fairyjoke.js')
 const { sendScore } = require('./discord.js')
-const MDB = require('./music_db.json')
+const MDB = require('./music_db.json');
+const { ApplicationCommandPermissionsManager } = require('discord.js');
 const rawDB = fs.readFileSync('../savedata/sdvx@asphyxia.db');
 let currentDB;
 let users;
 
 start();
 
-async function start(){
+async function start() {
     currentDB = await parseDB(rawDB);
     users = await loadUsers()
     console.log(`Tracking ${users.length} users.`)
     startWatcher();
 }
 
-async function parseDB(DB){
+async function parseDB(DB) {
     DB = DB.slice(0, -1)
     let parsed = `[${DB}]`;
     let arr = parsed.split('\n');
     let newarr = [];
-    for (i in arr){
-        if (i == arr.length - 1){
+    for (i in arr) {
+        if (i == arr.length - 1) {
             newarr.push(`${arr[i]}`);
         }
-        else{
+        else {
             newarr.push(`${arr[i]},`);
         }
     }
@@ -34,21 +35,21 @@ async function parseDB(DB){
 }
 
 
-async function loadUsers(){
+async function loadUsers() {
     const tempUsers = []
-    for (i in currentDB){
+    for (i in currentDB) {
         const obj = currentDB[i];
         if (obj.collection === "profile") {
-            if(tempUsers.map(function(e) { return e.refid; }).indexOf(obj.__refid) === -1){
-                tempUsers.push({name : obj.name, appeal : obj.appeal, refid : obj.__refid, skill : 0, volforce : 0})
+            if (tempUsers.map(function (e) { return e.refid; }).indexOf(obj.__refid) === -1) {
+                tempUsers.push({ name: obj.name, appeal: obj.appeal, refid: obj.__refid, skill: 0, volforce: 0 })
             };
         }
     }
-    for (i in currentDB){
+    for (i in currentDB) {
         const obj = currentDB[i];
         if (obj.collection === "skill") {
-            for (i in tempUsers){
-                if (tempUsers[i].refid === obj.__refid && obj.level > tempUsers[i].skill){
+            for (i in tempUsers) {
+                if (tempUsers[i].refid === obj.__refid && obj.level > tempUsers[i].skill) {
                     tempUsers[i].skill = obj.level !== 12 ? obj.level : "∞";
                 }
             }
@@ -58,8 +59,8 @@ async function loadUsers(){
     return finalUsers
 }
 
-async function appendVolforce(users){
-    for (i in users){
+async function appendVolforce(users) {
+    for (i in users) {
         const obj = users[i];
         const scores = await getScores(obj.refid);
         const VF = await calculateVolforce(scores);
@@ -68,9 +69,9 @@ async function appendVolforce(users){
     return users
 }
 
-async function getScores(refid){
+async function getScores(refid) {
     const scores = []
-    for (i in currentDB){
+    for (i in currentDB) {
         const obj = currentDB[i];
         if (obj.collection === "music" && obj.__refid === refid) {
             scores.push(obj)
@@ -79,39 +80,40 @@ async function getScores(refid){
     return scores
 }
 
-async function startWatcher(){
+async function startWatcher() {
     try {
         const watcher = watch('./../savedata/sdvx@asphyxia.db');
         for await (const event of watcher)
-          updateChanges()
-      } catch (err) {
+            updateChanges()
+    } catch (err) {
         throw err;
-      }
+    }
 }
 
-async function updateChanges(){
+async function updateChanges() {
     let rawNewDB = fs.readFileSync('./../savedata/sdvx@asphyxia.db');
     let newDB = await parseDB(rawNewDB)
-    if (newDB.length !== currentDB.length){
-        const obj = newDB[newDB.length -1];
-        if (obj.collection === "music"){
+    if (newDB.length !== currentDB.length) {
+        const obj = newDB[newDB.length - 1];
+        if (obj.collection === "music") {
             const bestScore = await scanBestScore(obj.mid, obj.type, obj.__refid)
-            if (obj.score > bestScore){
+            if (obj.score > bestScore) {
                 const info = await getSongInformation(obj.mid);
                 let user;
                 for (i in users) {
                     if (users[i].refid === obj.__refid) user = users[i];
                 }
                 let vf = (await singleScoreVolforce(obj) / 100)
-                vf = toFixed(vf,3)
-                await sendScore(user, obj, info, vf)
+                vf = toFixed(vf, 3)
+                let rank = await getServerRank(obj)
+                await sendScore(user, obj, info, vf, rank)
             }
         }
     }
     currentDB = newDB;
 }
 
-async function scanBestScore(mid,type,refid){
+async function scanBestScore(mid, type, refid) {
     let bestScore = 0
     const scores = await getScores(refid);
     for (i in scores) {
@@ -128,7 +130,7 @@ async function calculateVolforce(score_db) {
         temp = parseFloat(toFixed(temp, 1));
         volforceArray.push(temp);
     }
-    volforceArray.sort(function(a, b) { return b - a });
+    volforceArray.sort(function (a, b) { return b - a });
     var VF = 0;
     if (volforceArray.length > 50) {
         for (var i = 0; i < 50; i++) {
@@ -209,27 +211,27 @@ function getSongLevel(musicid, type) {
         case 0:
             if (!(result[0]["difficulty"]["novice"] === undefined))
                 diffnum = result[0]["difficulty"]["novice"]["difnum"]["#text"]
-                // return result[0]["difficulty"]["novice"]["difnum"]["#text"]
+            // return result[0]["difficulty"]["novice"]["difnum"]["#text"]
             break;
         case 1:
             if (!(result[0]["difficulty"]["advanced"] === undefined))
                 diffnum = result[0]["difficulty"]["advanced"]["difnum"]["#text"]
-                // return result[0]["difficulty"]["advanced"]["difnum"]["#text"]
+            // return result[0]["difficulty"]["advanced"]["difnum"]["#text"]
             break;
         case 2:
             if (!(result[0]["difficulty"]["exhaust"] === undefined))
                 diffnum = result[0]["difficulty"]["exhaust"]["difnum"]["#text"]
-                // return result[0]["difficulty"]["exhaust"]["difnum"]["#text"]
+            // return result[0]["difficulty"]["exhaust"]["difnum"]["#text"]
             break;
         case 3:
             if (!(result[0]["difficulty"]["infinite"] === undefined))
                 diffnum = result[0]["difficulty"]["infinite"]["difnum"]["#text"]
-                // return result[0]["difficulty"]["infinite"]["difnum"]["#text"]
+            // return result[0]["difficulty"]["infinite"]["difnum"]["#text"]
             break;
         case 4:
             if (!(result[0]["difficulty"]["maximum"] === undefined))
                 diffnum = result[0]["difficulty"]["maximum"]["difnum"]["#text"]
-                // return result[0]["difficulty"]["maximum"]["difnum"]["#text"]
+            // return result[0]["difficulty"]["maximum"]["difnum"]["#text"]
             break;
     }
     if (diffnum == 0) {
@@ -237,4 +239,34 @@ function getSongLevel(musicid, type) {
     }
     return diffnum;
 
+}
+
+async function getServerRank(score){
+    let scores = []
+    for (i in currentDB){
+        const obj = currentDB[i];
+        if (obj.collection === "music" && obj.mid === score.mid && obj.type === score.type && obj.__refid !== score.__refid) scores.push(obj)
+    }
+    scores.push(score)
+    sortedScores = scores.sort(compare);
+    for (i in sortedScores){
+        const obj = sortedScores[i]
+        if (obj._id === score._id) return (sortedScores.length - i).toString()
+    }
+}
+
+function compare(a,b){
+    if ( a.score < b.score ){
+        return -1;
+    }
+    if ( a.score > b.score ){
+        return 1;
+    }
+    if ( a.updatedAt.$$date < b.updatedAt.$$date){
+        return -1;
+    }
+    if (a.updatedAt.$$date > b.updatedAt.$$date){
+        return 1;
+    }
+    return 0
 }
