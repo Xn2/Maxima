@@ -5,6 +5,7 @@ const { sendScore } = require('./discord.js')
 const MDB = require('./music_db.json');
 const { ApplicationCommandPermissionsManager } = require('discord.js');
 const rawDB = fs.readFileSync('../savedata/sdvx@asphyxia.db');
+const kamai = require('./kamai.js')
 let currentDB;
 let users;
 
@@ -251,7 +252,7 @@ async function getServerRank(score){
     sortedScores = scores.sort(compare);
     for (i in sortedScores){
         const obj = sortedScores[i]
-        if (obj._id === score._id) return (sortedScores.length - i).toString()
+        if (obj._id === score._id) return {rank : (sortedScores.length - i).toString(), total : scores.length.toString()}
     }
 }
 

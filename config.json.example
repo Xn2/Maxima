@@ -1,4 +1,7 @@
 {
     "discord_token" : "",
-    "channel_id" : ""
+    "discord_client_id : ""
+    "channel_id" : "",
+    "kamaitachi_api_key" : "af66097bc0305ab0cbbe62085894737ceecd63ec",
+    "kamai_users_list" : []
 }

@@ -1,13 +1,35 @@
 const { Client, Intents } = require('discord.js');
 const { MessageAttachment } = require('discord.js');
-const config = require("./config.json")
+const { getTrackedLB, getTrackedScores } = require('./kamai.js')
+const config = require("./config.json");
+const { getSongInformation } = require('./fairyjoke.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+
+client.once('ready', () => {
+  console.log('Connected to Discord');
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const { commandName } = interaction;
+  switch (commandName) {
+    case "lb":
+      await interaction.reply(await buildLBEmbed());
+      break;
+    case "chartlb":
+      let mid = interaction.options.getInteger('mid');
+      let diff = interaction.options.getString('diff');
+      await interaction.reply(await buildSongLBEmbed(mid, diff));
+      break;
+  }
+});
 
 async function sendScore(user, scoreObj, songObj, vf, rank) {
   let diffName = await getDiffName(scoreObj, songObj)
   let level = await getDiffLevel(scoreObj, songObj)
   const file = new MessageAttachment(`./assets/grade_${scoreObj.grade}.png`);
-  client.channels.cache.get(config.channel_id).send(await buildEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file))
+  client.channels.cache.get(config.channel_id).send(await buildPBEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file))
 }
 
 async function getDiffName(scoreObj, songObj) {
@@ -49,7 +71,8 @@ function getColor(diffName) {
   }
 }
 
-function buildEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
+async function buildPBEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
+  const kamaiRank = await getKamaiRank(user, diffName, scoreObj)
   const lamps = ['FAILED', 'FAILED', 'CLEAR', 'EXCESSIVE CLEAR', 'ULTIMATE CHAIN', 'PERFECT ULTIMATE CHAIN']
   return {
     "content": null,
@@ -75,7 +98,7 @@ function buildEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
           },
           {
             "name": "Score",
-            "value": scoreObj.score.toString(),
+            "value": boldScore(scoreObj.score.toString()),
             "inline": true
           },
           {
@@ -90,12 +113,12 @@ function buildEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
           },
           {
             "name": "Rank Lynarcade",
-            "value": `**#${rank}**`,
+            "value": `**#${rank.rank}**/${rank.total}`,
             "inline": true
           },
           {
             "name": "Rank Français",
-            "value": `**--**`,
+            "value": `**#${kamaiRank.rank}**/${kamaiRank.total}`,
             "inline": true
           }
         ],
@@ -105,7 +128,6 @@ function buildEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
         },
         "image": {
           "url": `https://fairyjoke.net/api/games/sdvx/musics/${scoreObj.mid}/${diffName}.png`,
-          "height": 100
         },
         "thumbnail": {
           "url": `https://fairyjoke.net/api/games/sdvx/apecas/${user.appeal}.png`
@@ -121,6 +143,112 @@ function buildEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
   }
 }
 
+async function buildLBEmbed() {
+  const LB = await getTrackedLB();
+  let users = "";
+  let vf = "";
+  let dans = "";
+  for (i in LB) {
+    const obj = LB[i];
+    users += `${i == 0 ? `**#${parseInt(i) + 1} ${obj.username}**` : `#${parseInt(i) + 1} ${obj.username}`}\n`
+    vf += `${(Math.round((obj.ratings.VF6 + Number.EPSILON) * 1000) / 1000).toFixed(3)}\n`
+    if (typeof obj.classes.dan !== "undefined") {
+      dans += `${obj.classes.dan !== 11 ? `Skill Lv ${obj.classes.dan + 1}` : "Skill Lv ∞"}\n`
+    }
+    else {
+      dans += "--\n";
+    }
+  }
+  return {
+    "content": null,
+    "embeds": [
+      {
+        "title": `Leaderboard Français`,
+        "color": 16777215,
+        "fields": [
+          {
+            "name": "Joueur",
+            "value": users,
+            "inline": true
+          },
+          {
+            "name": "Volforce",
+            "value": vf,
+            "inline": true
+          },
+          {
+            "name": "Dan",
+            "value": dans,
+            "inline": true
+          }
+        ],
+        "author": {
+          "name": `Kamaitachi Leaderboard`,
+          "icon_url": `https://cdn.kamaitachi.xyz/logos/logo-mark.png`
+        },
+      }
+    ],
+    "username": "Maxima",
+    "avatar_url": "https://static.wikia.nocookie.net/sound-voltex/images/3/3b/Maxima.jpg"
+  }
+}
+
+async function buildSongLBEmbed(mid, diff) {
+  const LB = await getTrackedScores(mid, diff);
+  const songInfo = await getSongInformation(mid)
+  let users = "";
+  let score = "";
+  let global = "";
+  for (i in LB) {
+    const obj = LB[i];
+    users += `${i == 0 ? `**#${parseInt(i) + 1} ${obj.username}**` : `#${parseInt(i) + 1} ${obj.username}`}\n`
+    score += `${boldScore(obj.scoreData.score.toString())}\n`
+    global += `${obj.rankingData.rank == 1 ? `**#${obj.rankingData.rank}**/${obj.rankingData.outOf}` : `#${obj.rankingData.rank}/${obj.rankingData.outOf}`}\n`
+  }
+  return {
+    "content": null,
+    "embeds": [
+      {
+        "title": `Leaderboard Français`,
+        "description": `${songInfo.artist} - ${songInfo.title} [${diff}]`,
+        "color": getColor(getLongDiffName(diff)),
+        "fields": [
+          {
+            "name": "Joueur",
+            "value": users,
+            "inline": true
+          },
+          {
+            "name": "Score",
+            "value": score,
+            "inline": true
+          },
+          {
+            "name": "Global",
+            "value": global,
+            "inline": true
+          },
+
+        ],
+        "timestamp": new Date(),
+        "author": {
+          "name": `Kamaitachi Leaderboard`,
+          "icon_url": `https://cdn.kamaitachi.xyz/logos/logo-mark.png`
+        },
+        "image": {
+          "url": `https://fairyjoke.net/api/games/sdvx/musics/${mid}/${getLongDiffName(diff)}.png`,
+        },
+        "footer": {
+          "text": `Music ID : ${mid}`
+        }
+      }
+    ],
+    "username": "Maxima",
+    "avatar_url": "https://static.wikia.nocookie.net/sound-voltex/images/3/3b/Maxima.jpg"
+  }
+}
+
+
 function truncate(str) {
   if (str.length > 25) {
     return str.substring(0, 22) + "..."
@@ -128,6 +256,63 @@ function truncate(str) {
   return str
 }
 
+function boldScore(str) {
+  return `**${str.substring(0, 3)}**${str.substring(3)}`
+}
+
+function getLongDiffName(str) {
+  switch (str) {
+    case "NOV":
+      return "NOVICE"
+    case "ADV":
+      return "ADVANCED"
+    case "EXH":
+      return "EXHAUST"
+    case "MXM":
+      return "MAXIMUM"
+    case "INF":
+      return "INFINITE"
+    case "GRV":
+      return "GRAVITY"
+    case "HVN":
+      return "HEAVENLY"
+    case "VVD":
+      return "VIVID"
+  }
+}
+
+function getShortDiffName(str) {
+  switch (str) {
+    case "NOVICE":
+    case "ADVANCED":
+    case "EXHAUST":
+      return diff.slice(0, 3).toUpperCase()
+    case "MAXIMUM":
+      return "MXM"
+    case "INF":
+      return "INFINITE"
+    case "GRAVITY":
+      return "GRV"
+    case "HEAVENLY":
+      return "HVN"
+    case "VIVID":
+      return "VVD"
+  }
+}
+
+async function getKamaiRank(user,diffName,scoreObj){
+  const LB = await getTrackedScores(scoreObj.mid, getShortDiffName(diffName));
+  const total = LB.length
+  console.log(LB);
+  for (i in LB) {
+    const obj = LB[i];
+    if (obj.username.toLowerCase().substring(0,4) === user.name.toLowerCase().substring(0,4)) LB.splice(i,1)
+  }
+  for (i in LB){
+    const obj = LB[i];
+    if (scoreObj.score > obj.scoreData.score) return {rank : (parseInt(i) + 1).toString(), total}
+  }
+}
 
 client.login(config.discord_token);
 
