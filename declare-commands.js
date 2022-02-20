@@ -39,23 +39,7 @@ const commands = [{
                 {
                     "name": "MXM",
                     "value": "MXM"
-                },
-                {
-                    "name": "INF",
-                    "value": "INF"
-                },
-                {
-                    "name": "GRV",
-                    "value": "GRV"
-                },
-                {
-                    "name": "HVN",
-                    "value": "HVN"
-                },
-                {
-                    "name": "VVD",
-                    "value": "VVD"
-                },
+                }
             ]
         }
     ]

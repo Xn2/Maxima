@@ -101,7 +101,5 @@ function sortByScore(a, b) {
 }
 
 statusCheck();
-const users = getTrackedLB();
-getChartID(495, "HVN")
 
 module.exports = { getTrackedScores, getTrackedLB }

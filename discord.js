@@ -194,8 +194,9 @@ async function buildLBEmbed() {
 }
 
 async function buildSongLBEmbed(mid, diff) {
-  const LB = await getTrackedScores(mid, diff);
   const songInfo = await getSongInformation(mid)
+  diff = getInfDiff(songInfo, diff)
+  const LB = await getTrackedScores(mid, diff);
   let users = "";
   let score = "";
   let global = "";
@@ -312,6 +313,11 @@ async function getKamaiRank(user,diffName,scoreObj){
     const obj = LB[i];
     if (scoreObj.score > obj.scoreData.score) return {rank : (parseInt(i) + 1).toString(), total}
   }
+}
+
+function getInfDiff(songInfo, diff){
+  if (diff !== 'MXM') return diff;
+  return getShortDiffName(songInfo.difficulties[3].diff);
 }
 
 client.login(config.discord_token);
