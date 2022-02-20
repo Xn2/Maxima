@@ -286,7 +286,7 @@ function getShortDiffName(str) {
     case "NOVICE":
     case "ADVANCED":
     case "EXHAUST":
-      return diff.slice(0, 3).toUpperCase()
+      return str.slice(0, 3).toUpperCase()
     case "MAXIMUM":
       return "MXM"
     case "INF":
