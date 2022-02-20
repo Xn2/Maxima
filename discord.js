@@ -197,6 +197,7 @@ async function buildSongLBEmbed(mid, diff) {
   const songInfo = await getSongInformation(mid)
   diff = getInfDiff(songInfo, diff)
   const LB = await getTrackedScores(mid, diff);
+  if (!LB) return {content: 'Chart not found.'}
   let users = "";
   let score = "";
   let global = "";
@@ -317,7 +318,8 @@ async function getKamaiRank(user,diffName,scoreObj){
 
 function getInfDiff(songInfo, diff){
   if (diff !== 'MXM') return diff;
-  return getShortDiffName(songInfo.difficulties[3].diff);
+  if (typeof songInfo.difficulties[3] !== "undefined") return getShortDiffName(songInfo.difficulties[3].diff);
+  return ""
 }
 
 client.login(config.discord_token);

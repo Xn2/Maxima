@@ -39,6 +39,7 @@ async function getTrackedLB() {
 
 async function getTrackedScores(mid, diff) {
     const chartID = await getChartID(mid, diff);
+    if (!chartID) return false
     const res = await axios.get(`${kamai_baseURL}games/sdvx/Single/charts/${chartID}/pbs`, auth_header)
     const users = res.data.body.users;
     const scores = res.data.body.pbs;
@@ -65,11 +66,16 @@ async function getTrackedScores(mid, diff) {
 }
 
 async function getChartID(mid, diff) {
-    const res = await axios.get(`${kamai_baseURL}games/sdvx/Single/songs/${mid}`, auth_header)
-    const charts = res.data.body.charts;
-    for (i in charts) {
-        const obj = charts[i];
-        if (obj.difficulty === diff) return obj.chartID
+    try{
+        const res = await axios.get(`${kamai_baseURL}games/sdvx/Single/songs/${mid}`, auth_header)
+        const charts = res.data.body.charts;
+        for (i in charts) {
+            const obj = charts[i];
+            if (obj.difficulty === diff) return obj.chartID
+        }
+    }
+    catch{
+        return false
     }
 }
 
