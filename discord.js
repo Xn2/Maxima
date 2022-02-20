@@ -17,7 +17,7 @@ client.on('interactionCreate', async interaction => {
     case "lb":
       await interaction.reply(await buildLBEmbed());
       break;
-    case "chartlb":
+    case "clb":
       let mid = interaction.options.getInteger('mid');
       let diff = interaction.options.getString('diff');
       await interaction.reply(await buildSongLBEmbed(mid, diff));
