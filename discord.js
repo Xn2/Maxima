@@ -1,6 +1,6 @@
 const { Client, Intents } = require('discord.js');
 const { MessageAttachment } = require('discord.js');
-const { getTrackedLB, getTrackedScores } = require('./kamai.js')
+const { getTrackedLB, getTrackedScores, searchSong } = require('./kamai.js')
 const config = require("./config.json");
 const { getSongInformation } = require('./fairyjoke.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -11,7 +11,6 @@ client.once('ready', () => {
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
-
   const { commandName } = interaction;
   switch (commandName) {
     case "lb":
@@ -22,6 +21,10 @@ client.on('interactionCreate', async interaction => {
       let diff = interaction.options.getString('diff');
       await interaction.reply(await buildSongLBEmbed(mid, diff));
       break;
+    case "search":
+      let str = interaction.options.getString('song');
+      let song = await searchSong(str)
+      await interaction.reply(await buildSongEmbed(song))
   }
 });
 
@@ -250,6 +253,48 @@ async function buildSongLBEmbed(mid, diff) {
   }
 }
 
+async function buildSongEmbed(songObj){
+  if (!songObj) return {content: 'Chart not found.'}
+  const songInfo = await getSongInformation(songObj.id)
+  let diffs = ""
+  for (i in songInfo.difficulties){
+    diffs += `${getShortDiffName(songInfo.difficulties[i].diff)}\n`
+  }
+  return {
+    "content": null,
+    "embeds": [
+      {
+        "title": `${songInfo.artist} - ${songInfo.title}`,
+        "color": 16777215,
+        "fields": [
+          {
+            "name": "Difficulties",
+            "value": diffs,
+            "inline": true
+          },
+          {
+            "name": "BPM",
+            "value": songInfo.bpm,
+            "inline": true
+          }
+        ],
+        "timestamp": new Date(),
+        "author": {
+          "name": `Song Search`,
+          "icon_url": `https://cdn.kamaitachi.xyz/logos/logo-mark.png`
+        },
+        "image": {
+          "url": `https://fairyjoke.net/api/games/sdvx/musics/${songObj.id}/NOVICE.png`,
+        },
+        "footer": {
+          "text": `Music ID : ${songObj.id}`
+        }
+      }
+    ],
+    "username": "Maxima",
+    "avatar_url": "https://static.wikia.nocookie.net/sound-voltex/images/3/3b/Maxima.jpg"
+  }
+}
 
 function truncate(str) {
   if (str.length > 25) {

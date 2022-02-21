@@ -8,6 +8,18 @@ const commands = [{
     description: 'Shows the leaderboard'
 },
 {
+    name : 'search',
+    description : "Search for a song",
+    options : [
+        {
+            name : "song",
+            description : "Song title to search",
+            type : 3,
+            required : true
+        }
+    ]
+},
+{
     "name": "clb",
     "type": 1,
     "description": "Get leaderboard for a chart",
@@ -52,7 +64,7 @@ const rest = new REST({ version: '9' }).setToken(config.discord_token);
         console.log('Started refreshing application (/) commands.');
 
         await rest.put(
-            Routes.applicationCommands(config.discord_client_id),
+            Routes.applicationCommands(config.discord_clientid),
             { body: commands },
         );
 

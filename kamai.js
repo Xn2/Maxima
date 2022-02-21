@@ -79,6 +79,28 @@ async function getChartID(mid, diff) {
     }
 }
 
+async function searchSong(str){
+    try{
+        const res = await axios.get(`${kamai_baseURL}search?search=${str}`, auth_header)
+        const results = res.data.body.songs
+        console.log(results)
+        let best = 0
+        let song = false;
+        for (i in results){
+            const obj = results[i];
+            if (obj.game === 'sdvx' && obj.__textScore > best){
+                song = obj;
+                best = obj.__textScore;
+            }
+        }
+        return song
+    }
+    catch(err){
+        console.log(err)
+        return false
+    }
+}
+
 
 function sortByVF(a, b) {
     if (a.ratings.VF6 < b.ratings.VF6) {
@@ -108,4 +130,4 @@ function sortByScore(a, b) {
 
 statusCheck();
 
-module.exports = { getTrackedScores, getTrackedLB }
+module.exports = { getTrackedScores, getTrackedLB, searchSong }
