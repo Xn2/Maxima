@@ -1,5 +1,5 @@
 const { Client, Intents } = require('discord.js');
-const { MessageAttachment } = require('discord.js');
+const { MessageAttachment, MessageActionRow, MessageButton } = require('discord.js');
 const { getTrackedLB, getTrackedScores, searchSong } = require('./kamai.js')
 const config = require("./config.json");
 const { getSongInformation } = require('./fairyjoke.js');
@@ -25,6 +25,17 @@ client.on('interactionCreate', async interaction => {
       let str = interaction.options.getString('song');
       let song = await searchSong(str)
       await interaction.reply(await buildSongEmbed(song))
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+	if (!interaction.isButton()) return;
+  switch (interaction.customId.split('-')[0]){
+    case "LB" :
+      const mid = interaction.customId.split('-')[1];
+      const diff = interaction.customId.split('-')[2]
+	    await interaction.reply(await buildSongLBEmbed(mid, diff));
+      break;
   }
 });
 
@@ -76,6 +87,14 @@ function getColor(diffName) {
 
 async function buildPBEmbed(user, songObj, scoreObj, diffName, level, vf, rank, file) {
   const kamaiRank = await getKamaiRank(user, diffName, scoreObj)
+  const row = new MessageActionRow()
+  .addComponents(
+    new MessageButton()
+      .setCustomId('primary')
+      .setLabel('Leaderboard')
+      .setStyle('PRIMARY')
+      .setCustomId(`LB-${scoreObj.mid}-${getShortDiffName(diffName)}`)
+  );
   const lamps = ['FAILED', 'FAILED', 'CLEAR', 'EXCESSIVE CLEAR', 'ULTIMATE CHAIN', 'PERFECT ULTIMATE CHAIN']
   return {
     "content": null,
@@ -142,7 +161,8 @@ async function buildPBEmbed(user, songObj, scoreObj, diffName, level, vf, rank, 
     ],
     "username": "Maxima",
     "avatar_url": "https://static.wikia.nocookie.net/sound-voltex/images/3/3b/Maxima.jpg",
-    "files": [file]
+    "files": [file],
+    "components" : [row]
   }
 }
 
@@ -357,8 +377,10 @@ async function getKamaiRank(user,diffName,scoreObj){
   }
   for (i in LB){
     const obj = LB[i];
+    console.log({rank : (parseInt(i) + 1).toString(), total})
     if (scoreObj.score > obj.scoreData.score) return {rank : (parseInt(i) + 1).toString(), total}
   }
+  return {rank : total, total}
 }
 
 function getInfDiff(songInfo, diff){
