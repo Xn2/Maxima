@@ -83,7 +83,6 @@ async function searchSong(str){
     try{
         const res = await axios.get(`${kamai_baseURL}search?search=${str}`, auth_header)
         const results = res.data.body.songs
-        console.log(results)
         let best = 0
         let song = false;
         for (i in results){
@@ -96,7 +95,6 @@ async function searchSong(str){
         return song
     }
     catch(err){
-        console.log(err)
         return false
     }
 }

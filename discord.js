@@ -277,8 +277,18 @@ async function buildSongEmbed(songObj){
   if (!songObj) return {content: 'Chart not found.'}
   const songInfo = await getSongInformation(songObj.id)
   let diffs = ""
+  const row = new MessageActionRow()
   for (i in songInfo.difficulties){
-    diffs += `${getShortDiffName(songInfo.difficulties[i].diff)}\n`
+    const diff = getShortDiffName(songInfo.difficulties[i].diff)
+    const level = songInfo.difficulties[i].level
+    diffs += `[${diff}] **${level}**\n`
+    row.addComponents(
+      new MessageButton()
+        .setCustomId('primary')
+        .setLabel(`${diff}`)
+        .setStyle('SECONDARY')
+        .setCustomId(`LB-${songObj.id}-${diff}`)
+    );
   }
   return {
     "content": null,
@@ -311,6 +321,7 @@ async function buildSongEmbed(songObj){
         }
       }
     ],
+    "components" : [row],
     "username": "Maxima",
     "avatar_url": "https://static.wikia.nocookie.net/sound-voltex/images/3/3b/Maxima.jpg"
   }
