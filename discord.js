@@ -277,6 +277,8 @@ async function buildSongEmbed(songObj){
   if (!songObj) return {content: 'Chart not found.'}
   const songInfo = await getSongInformation(songObj.id)
   let diffs = ""
+  const dateSplit = songInfo.release_date.split("-")
+  const releaseDate = `${dateSplit[2]}/${dateSplit[1]}/${dateSplit[0]}`
   const row = new MessageActionRow()
   for (i in songInfo.difficulties){
     const diff = getShortDiffName(songInfo.difficulties[i].diff)
@@ -305,6 +307,11 @@ async function buildSongEmbed(songObj){
           {
             "name": "BPM",
             "value": songInfo.bpm,
+            "inline": true
+          },
+          {
+            "name": "Release date",
+            "value": releaseDate,
             "inline": true
           }
         ],
