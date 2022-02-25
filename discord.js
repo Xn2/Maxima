@@ -35,6 +35,7 @@ client.on('interactionCreate', async interaction => {
       const mid = interaction.customId.split('-')[1];
       const diff = interaction.customId.split('-')[2]
 	    await interaction.reply(await buildSongLBEmbed(mid, diff));
+      await await interaction.deleteReply()
       break;
   }
 });
