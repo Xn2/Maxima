@@ -12,7 +12,7 @@ async function statusCheck() {
 }
 
 async function getTrackedLB() {
-    const res = await axios.get(`${kamai_baseURL}games/sdvx/Single/leaderboard`, auth_header)
+    const res = await axios.get(`${kamai_baseURL}games/sdvx/Single/leaderboard?limit=500`, auth_header)
     const stats = res.data.body.gameStats;
     const users = res.data.body.users
     let tracked = [];
