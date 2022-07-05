@@ -228,7 +228,7 @@ async function buildSongLBEmbed(mid, diff) {
   for (i in LB) {
     const obj = LB[i];
     users += `${i == 0 ? `**#${parseInt(i) + 1} ${obj.username}**` : `#${parseInt(i) + 1} ${obj.username}`}\n`
-    score += `${boldScore(obj.scoreData.score.toString())}\n`
+    score += `${boldScore(obj.scoreData.score.toString())} [${obj.scoreData.lamp[0]}]\n`
     global += `${obj.rankingData.rank == 1 ? `**#${obj.rankingData.rank}**/${obj.rankingData.outOf}` : `#${obj.rankingData.rank}/${obj.rankingData.outOf}`}\n`
   }
   return {
